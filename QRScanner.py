@@ -1,5 +1,6 @@
 import cv2 as CV
 import webbrowser as web
+import time, os
 
 # ---------------- CONTEXT --------------------
 # Program: Contact Tracing App
@@ -9,6 +10,16 @@ import webbrowser as web
 # 	- You may decide which personal data to include
 # 	- All data read from QRCode should be stored in a text file including the date and time it was read
 
+def StoreDatatoTxt (data, sv_method):
+    if (sv_method == None) or (sv_method == 0):
+        sv_method = "w"
+    elif (sv_method == 1) or (sv_method == True):
+        sv_method = "a"
+    with open("QR_Logs.txt", sv_method) as txtfile:
+        crrnt_time = time.localtime()
+        frmt_time = time.strftime("%H:%M:%S", crrnt_time)
+        txtfile.write(data)
+
 cap = CV.VideoCapture(0)
 
 img_QRdetect = CV.QRCodeDetector()
@@ -16,16 +27,26 @@ img_QRdetect = CV.QRCodeDetector()
 while True:
     _, img = cap.read()
 
-    data, bbox, _ = img_QRdetect.detectAndDecode(img)
-    if data:
-        a = data
-        with open("QR_Logs.txt", "w") as txtfile:
-            txtfile.write(a)
+    QRData, bbox, _ = img_QRdetect.detectAndDecode(img)
+    if QRData:
+        DecodedDataQR = QRData
+        try:
+            verifyFl = os.path.exists("QR_Logs.txt")
+            if verifyFl == True:
+                verifyCtnt = os.path.getsize("QR_Logs.txt")
+                if verifyCtnt == 0:
+                    StoreDatatoTxt(DecodedDataQR, 0)
+                else:
+                    StoreDatatoTxt(DecodedDataQR, 1)
+            elif verifyFl == False:
+                StoreDatatoTxt(DecodedDataQR, 0)
+        except Exception as e:
+            print(f"\33[91mAn error occured :( ---> {e}\33[0m")
         break
     CV.imshow("QRCODE_Scanner", img)
-    if CV.waitKey(1) == ord("q"):
+    if CV.waitKey(1) == ord("s"):
         break
 
-bb = web.open(str(a))
+bb = web.open(str(DecodedDataQR))
 cap.release()
 CV.destroyAllWindows()
