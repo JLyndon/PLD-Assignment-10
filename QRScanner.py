@@ -22,33 +22,38 @@ def StoreDatatoTxt (data, sv_method):
         elif sv_method == "a":
             txtfile.write(f"\nAccessed {data} \n Time: {crrnt_time}")
 
-cap = CV.VideoCapture(0)
+qrCapt = CV.VideoCapture(0)
+qrCapt.set(3, 650)
+qrCapt.set(4, 480)
 
 img_QRdetect = CV.QRCodeDetector()
 
 while True:
-    _, img = cap.read()
-
-    QRData, bbox, _ = img_QRdetect.detectAndDecode(img)
+    _, image = qrCapt.read()
+    
+    QRData, CoordBox, _ = img_QRdetect.detectAndDecode(image)
     if QRData:
         DecodedDataQR = QRData
         try:
             verifyFl = os.path.exists("QR_Logs.txt")
             if verifyFl == True:
-                verifyCtnt = os.path.getsize("QR_Logs.txt")
-                if verifyCtnt == 0:
-                    StoreDatatoTxt(DecodedDataQR, 0)
-                else:
-                    StoreDatatoTxt(DecodedDataQR, 1)
+                    verifyCtnt = os.path.getsize("QR_Logs.txt")
+                    if verifyCtnt == 0:
+                        StoreDatatoTxt(DecodedDataQR, 0)
+                        break
+                    else:
+                        StoreDatatoTxt(DecodedDataQR, 1)
+                        break
             elif verifyFl == False:
-                StoreDatatoTxt(DecodedDataQR, 0)
+                    StoreDatatoTxt(DecodedDataQR, 0)
+                    break
         except Exception as e:
             print(f"\33[91mAn error occured :( ---> {e}\33[0m")
-        break
-    CV.imshow("QRCODE_Scanner", img)
+            break
+    CV.imshow("QRCODE_Scanner", image)
     if CV.waitKey(1) == ord("s"):
         break
 
 bb = web.open(str(DecodedDataQR))
-cap.release()
+qrCapt.release()
 CV.destroyAllWindows()
