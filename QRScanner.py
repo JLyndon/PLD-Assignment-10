@@ -1,6 +1,6 @@
 import cv2 as CV
 import webbrowser as web
-import time, os
+import datetime, os
 
 # ---------------- CONTEXT --------------------
 # Program: Contact Tracing App
@@ -16,9 +16,11 @@ def StoreDatatoTxt (data, sv_method):
     elif (sv_method == 1) or (sv_method == True):
         sv_method = "a"
     with open("QR_Logs.txt", sv_method) as txtfile:
-        crrnt_time = time.localtime()
-        frmt_time = time.strftime("%H:%M:%S", crrnt_time)
-        txtfile.write(data)
+        crrnt_time = datetime.datetime.now()
+        if sv_method == "w":
+            txtfile.write(f"Accessed {data} \n Time: {crrnt_time}")
+        elif sv_method == "a":
+            txtfile.write(f"\nAccessed {data} \n Time: {crrnt_time}")
 
 cap = CV.VideoCapture(0)
 
