@@ -23,6 +23,20 @@ def StoreDatatoTxt (data, sv_method):
         elif sv_method == "a":
             txtfile.write(f"\nAccessed {data} \n Time: {crrnt_time}")
 
+def read_barcodes(frame):
+    QRPatterDt = pyzbar.decode(frame)
+    TempVar = [""]
+    for code in QRPatterDt:
+        QRInfo = code.data.decode('utf-8')
+        TempVar.append(QRInfo)
+        boxPnt = numpy.array([code.polygon],numpy.int32)
+        boxPnt = boxPnt.reshape((-1, 1, 2))
+        CV.polylines(image, [boxPnt], True, (0, 255, 0), 4)
+
+        boxPnt0 = code.rect
+        CV.putText(image, QRData, (boxPnt0[0], boxPnt0[1]), CV.FONT_HERSHEY_COMPLEX_SMALL, 0.9, (0, 15, 0), 2)
+    return frame, TempVar[-1]
+
 qrCapt = CV.VideoCapture(0)
 qrCapt.set(3, 650)
 qrCapt.set(4, 480)
@@ -30,36 +44,33 @@ qrCapt.set(4, 480)
 while True:
     etc_, image = qrCapt.read()
     
-    for QRPattern in pyzbar.decode(image):
-        QRData = QRPattern.data.decode('utf-8')
-        boxPnt = numpy.array([QRPattern.polygon],numpy.int32)
-        boxPnt = boxPnt.reshape((-1, 1, 2))
-        CV.polylines(image, [boxPnt], True, (0, 255, 0), 4)
-
-        boxPnt0 = QRPattern.rect
-        CV.putText(image, QRData, (boxPnt0[0], boxPnt0[1]), CV.FONT_HERSHEY_COMPLEX_SMALL, 0.9, (0, 15, 0), 2)
-        if QRData:
-            DecodedDataQR = QRData
-            try:
-                verifyFl = os.path.exists("QR_Logs.txt")
-                if verifyFl == True:
-                        verifyCtnt = os.path.getsize("QR_Logs.txt")
-                        if verifyCtnt == 0:
-                            StoreDatatoTxt(DecodedDataQR, 0)
-                            break
-                        else:
-                            StoreDatatoTxt(DecodedDataQR, 1)
-                            break
-                elif verifyFl == False:
+    image, QRData = read_barcodes(image)
+    if QRData:
+        DecodedDataQR = QRData
+        try:
+            verifyFl = os.path.exists("QR_Logs.txt")
+            if verifyFl == True:
+                    verifyCtnt = os.path.getsize("QR_Logs.txt")
+                    if verifyCtnt == 0:
                         StoreDatatoTxt(DecodedDataQR, 0)
                         break
-            except Exception as e:
-                print(f"\33[91mAn error occured :( ---> {e}\33[0m")
-                break
+                    else:
+                        StoreDatatoTxt(DecodedDataQR, 1)
+                        break
+            elif verifyFl == False:
+                    StoreDatatoTxt(DecodedDataQR, 0)
+                    break
+        except Exception as e:
+            print(f"\33[91mAn error occured :( ---> {e}\33[0m")
+            break
     CV.imshow("QRCODE_Scanner", image)
-    CV.waitKey(1)
-    break
+    if CV.waitKey(5) == ord("p"):
+        break
 
-redirectBrwsr = web.open(DecodedDataQR)
-qrCapt.release()
-CV.destroyAllWindows()
+try:
+    redirectBrwsr = web.open(DecodedDataQR)
+    print("\33[92mRedirecting to Contents :)\33[0m")
+    qrCapt.release()
+    CV.destroyAllWindows()
+except Exception as e:
+        print(f"\33[91mCancelled Operation :(\33[0m")
